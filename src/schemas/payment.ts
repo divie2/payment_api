@@ -29,7 +29,18 @@ export const CreatePaymentSchema = z.object({
   amountKobo: z.number().int().positive().max(100_000_000),
   customerEmail: z.email(),
   description: z.string().max(200).optional()
+
 });
+
+
+export const ListPaymentsQuerySchema = z.object({
+
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(["pending", "success", "failed"]).optional(),
+
+});
+
 
 export function toPayment(row: PaymentRow): Payment {
   return {
@@ -45,4 +56,5 @@ export function toPayment(row: PaymentRow): Payment {
   };
 }
 export type CreatePaymentInput = z.infer<typeof CreatePaymentSchema>;
+export type ListPaymentsQuery = z.infer<typeof ListPaymentsQuerySchema>;
 

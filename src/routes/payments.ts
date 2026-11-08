@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { pool } from "../db.ts";
-import { CreatePaymentSchema, toPayment } from "../schemas/payment.ts";
+import { CreatePaymentSchema, ListPaymentsQuerySchema, toPayment } from "../schemas/payment.ts";
 import type {PaymentRow} from "../schemas/payment.ts"
 
 
@@ -63,5 +63,48 @@ paymentsRouter.get("/:id", async (req: Request, res: Response) => {
     }
 
     res.json(toPayment(payment));                                        // fix: 200 (default), not 201
+
+});
+
+paymentsRouter.get("/", async (req: Request, res: Response) => {
+
+  const queryCheck = ListPaymentsQuerySchema.safeParse(req.query);
+
+  if (!queryCheck.success) {
+    res.status(400).json({
+      details: z.flattenError(queryCheck.error).fieldErrors,
+      error: 'Invalid query parameter'
+    });
+    return; 
+  }
+
+  const { status, page, limit } = queryCheck.data;
+
+  const offset = (page - 1) * limit
+
+
+  const [listResult, countResult] = await Promise.all([
+    pool.query<PaymentRow>(
+      ' SELECT * FROM payments WHERE ($1::text IS NULL OR status = $1) ORDER BY created_at DESC, id DESC LIMIT $2 OFFSET $3', [status ?? null,limit, offset]
+
+    ),
+    pool.query<{ total: string }>(
+      'SELECT Count(*) as total FROM payments WHERE ($1::text IS NULL OR status = $1)', [status ?? null]
+    ),
+    ]);
+
+  const total = Number(countResult.rows[0].total)
+
+  const totalPages = Math.ceil(total / limit)
+
+
+
+  res.json({
+      
+      data: listResult.rows.map(toPayment),   // ✅ each row → an API payment,
+      pagination: {"page": page, "limit": limit, "total": total, "totalPages": totalPages}
+
+    });
+
 
 });

@@ -40,3 +40,28 @@ paymentsRouter.post("/", async (req: Request, res: Response) => {
 //   // 3. Respond
 //   res.status(201).json(insert.rows[0]);
 });
+
+
+paymentsRouter.get("/:id", async (req: Request, res: Response) => {
+  // 1. Validate
+  const idCheck = z.uuid().safeParse(req.params.id);
+  if (!idCheck.success) {
+    res.status(400).json({
+      error: "id must be a valid UUID"
+    });
+    return;
+  }
+ 
+    const result = await pool.query<PaymentRow>(
+        'SELECT * FROM payments WHERE id = $1', [idCheck.data]
+    );
+
+    const payment = result.rows[0]
+    if (!payment){
+        res.status(404).json({ error: "Payment not found" });             // fix: an object, like other errors
+    return;
+    }
+
+    res.json(toPayment(payment));                                        // fix: 200 (default), not 201
+
+});

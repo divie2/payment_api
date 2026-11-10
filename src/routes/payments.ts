@@ -30,17 +30,31 @@ paymentsRouter.post("/", async (req: Request, res: Response) => {
     );
     res.status(201).json(toPayment(insert.rows[0]));
 
-//   const insert = await pool.query(
-//     `INSERT INTO payments (amount_kobo, customer_email, description)
-//      VALUES ($1,$2,$3)
-//      RETURNING *`,
-//     [amountKobo, customerEmail, description ?? null]
-//   );
-
-//   // 3. Respond
-//   res.status(201).json(insert.rows[0]);
 });
 
+paymentsRouter.get("/summary", async (req: Request, res: Response) => {
+
+ 
+  const result = await pool.query<{ totalCount: number, byStatus: {pending: number,success: number, failed: number }, successAmountKobo: string }>(
+       `
+    SELECT 
+      COUNT(*)::INT AS "totalCount",
+      JSON_BUILD_OBJECT(
+        'pending', COUNT(*) FILTER (WHERE status = 'pending') ::INT,
+        'success', COUNT(*) FILTER (WHERE status = 'success') ::INT,
+        'failed',  COUNT(*) FILTER (WHERE status = 'failed') ::INT
+      ) AS "byStatus",
+      COALESCE(SUM(amount_kobo) FILTER (WHERE status = 'success') , 0) AS "successAmountKobo"
+    FROM payments;
+  `);
+
+  const summary = result.rows[0]
+  
+  res.json({
+    totalCount: summary.totalCount, byStatus: summary.byStatus, successAmountKobo: Number(summary.successAmountKobo)
+  });
+
+});
 
 paymentsRouter.get("/:id", async (req: Request, res: Response) => {
   // 1. Validate
@@ -65,6 +79,7 @@ paymentsRouter.get("/:id", async (req: Request, res: Response) => {
     res.json(toPayment(payment));                                        // fix: 200 (default), not 201
 
 });
+
 
 paymentsRouter.get("/", async (req: Request, res: Response) => {
 

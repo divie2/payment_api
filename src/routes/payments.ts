@@ -35,7 +35,7 @@ paymentsRouter.post("/", async (req: Request, res: Response) => {
 paymentsRouter.get("/summary", async (req: Request, res: Response) => {
 
  
-  const result = await pool.query<{ totalCount: number, byStatus: {pending: number,success: number, failed: number }, successAmountKobo: string }>(
+  const result = await pool.query<{ totalCount: number, byStatus: {pending: number,success: number, failed: number }, successAmountKobo: string, averageAmountKobo: number }>(
        `
     SELECT 
       COUNT(*)::INT AS "totalCount",
@@ -44,14 +44,16 @@ paymentsRouter.get("/summary", async (req: Request, res: Response) => {
         'success', COUNT(*) FILTER (WHERE status = 'success') ::INT,
         'failed',  COUNT(*) FILTER (WHERE status = 'failed') ::INT
       ) AS "byStatus",
-      COALESCE(SUM(amount_kobo) FILTER (WHERE status = 'success') , 0) AS "successAmountKobo"
+      COALESCE(SUM(amount_kobo) FILTER (WHERE status = 'refunded') , 0) AS "successAmountKobo",
+      COALESCE(ROUND(AVG(amount_kobo) FILTER (WHERE status = 'refunded')::INT ), 0) AS "averageAmountKobo"
     FROM payments;
   `);
 
   const summary = result.rows[0]
+  console.log(summary)
   
   res.json({
-    totalCount: summary.totalCount, byStatus: summary.byStatus, successAmountKobo: Number(summary.successAmountKobo)
+    totalCount: summary.totalCount, byStatus: summary.byStatus, successAmountKobo: Number(summary.successAmountKobo), averageAmountKobo: summary.averageAmountKobo
   });
 
 });

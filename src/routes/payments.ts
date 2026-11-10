@@ -44,13 +44,12 @@ paymentsRouter.get("/summary", async (req: Request, res: Response) => {
         'success', COUNT(*) FILTER (WHERE status = 'success') ::INT,
         'failed',  COUNT(*) FILTER (WHERE status = 'failed') ::INT
       ) AS "byStatus",
-      COALESCE(SUM(amount_kobo) FILTER (WHERE status = 'refunded') , 0) AS "successAmountKobo",
-      COALESCE(ROUND(AVG(amount_kobo) FILTER (WHERE status = 'refunded')::INT ), 0) AS "averageAmountKobo"
+      COALESCE(SUM(amount_kobo) FILTER (WHERE status = 'success') , 0) AS "successAmountKobo",
+      COALESCE(ROUND(AVG(amount_kobo) FILTER (WHERE status = 'success')::INT ),0) AS "averageAmountKobo"
     FROM payments;
   `);
 
   const summary = result.rows[0]
-  console.log(summary)
   
   res.json({
     totalCount: summary.totalCount, byStatus: summary.byStatus, successAmountKobo: Number(summary.successAmountKobo), averageAmountKobo: summary.averageAmountKobo

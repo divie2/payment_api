@@ -4,13 +4,14 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 
 
 ConfigModule.forRoot({ isGlobal: true })
 
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, HealthModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, HealthModule, PaymentsModule],
   controllers: [AppController],
   providers: [AppService],
 })

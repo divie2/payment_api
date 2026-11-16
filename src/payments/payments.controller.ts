@@ -1,10 +1,8 @@
 import { Body, Controller, Post, Get, Param, ParseUUIDPipe, NotFoundException, Query } from '@nestjs/common';
 import { PaymentsService } from './payments.service.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
-import { Payment, PaymentList } from './payment.types.js';
+import type { Payment, PaymentList } from './payment.types.js';
 import { ListPaymentsQueryDto } from './dto/list-payments-query.dto.js';
-
-
 
 @Controller('payments')
 export class PaymentsController {
@@ -14,17 +12,12 @@ export class PaymentsController {
     @Post()
     async create(@Body() dto: CreatePaymentDto) : Promise<Payment>{
         return await this.paymentService.create(dto)
-
     }
 
     @Get()
     async listPayments(@Query() query: ListPaymentsQueryDto): Promise<PaymentList> {
-
         return await this.paymentService.findAll(query)
-        // console.log(query, typeof query.page)
     }
-
-
 
     @Get(':id')
     async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Payment> {

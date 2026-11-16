@@ -1,5 +1,4 @@
-import { Type } from "class-transformer"
-import { IsInt, IsOptional, IsPositive, Max, MaxLength, IsString, IsEmail, Min, IsIn, } from "class-validator"
+import { IsInt, IsOptional, IsPositive, Max, MaxLength, IsString, IsEmail } from "class-validator"
 
 
 export class CreatePaymentDto{

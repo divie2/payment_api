@@ -1,7 +1,9 @@
 # Payments API
 
-A payment-processing API built with Node.js, TypeScript, Express and PostgreSQL.
+A payment-processing API built with Node.js, TypeScript, NestJS and PostgreSQL.
 Learning project: sandbox payments only. No real money or customer data.
+
+The first version was built with Express. It is kept at the git tag `express-v1`.
 
 ## Requirements
 - Node.js 22+
@@ -13,6 +15,7 @@ Learning project: sandbox payments only. No real money or customer data.
    docker run --name pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:16
    docker exec -it pg psql -U postgres -c "CREATE DATABASE payments_api;"
    ```
+   Later, after a restart, `docker start pg` is enough.
 2. Create your `.env` file from the example and fill in your password:
    ```bash
    cp .env.example .env
@@ -22,20 +25,37 @@ Learning project: sandbox payments only. No real money or customer data.
    npm install
    npm run migrate up
    ```
-4. Start the server (runs on http://localhost:3000 by default):
+4. Start the server (runs on http://localhost:4000 with the example `.env`):
    ```bash
-   npm run dev
+   npm run start:dev
    ```
 
+The app checks its configuration at startup: if `DATABASE_URL` is missing, it stops with an error instead of starting.
+
 ## Scripts
-- `npm run dev` – start the server, restarting on file changes
-- `npm run check` – type-check the code with TypeScript
+- `npm run start:dev` – start the server, restarting on file changes
+- `npm run build` – compile TypeScript into `dist/`
+- `npm run start:prod` – run the compiled app from `dist/`
 - `npm run migrate up` – apply pending database migrations
 - `npm run migrate down` – undo the most recent migration
 - `npm run migrate -- create <name> -j sql` – create a new SQL migration file
 
+## Errors
+All responses are JSON. Errors use NestJS's standard shape:
+```json
+{ "message": "Payment not found", "error": "Not Found", "statusCode": 404 }
+```
+For validation errors, `message` is a list with one entry per problem:
+```json
+{
+  "message": ["amountKobo must be an integer number", "customerEmail must be an email"],
+  "error": "Bad Request",
+  "statusCode": 400
+}
+```
+This differs from the Express version (`express-v1`), which returned `{ "error": "..." }`. Clients of the old version need to update.
+
 ## Endpoints
-All responses are JSON. Errors always have the shape `{ "error": "..." }`, sometimes with a `details` object naming the invalid fields.
 
 ### `GET /health`
 Checks the database connection.
@@ -55,13 +75,13 @@ Request body:
 ```
 - `amountKobo` – whole number, from 1 to 100,000,000
 - `customerEmail` – a valid email address
-- `description` – optional
+- `description` – optional, text up to 200 characters
 
 Responses:
 - `201` – the created payment
-- `400` – invalid body; `details` lists each invalid field
+- `400` – invalid body; `message` lists each problem
 
-Clients cannot set `status`, `id` or timestamps; extra fields are ignored.
+Clients cannot set `status`, `id` or timestamps; extra fields are removed.
 
 ### `GET /payments/:id`
 Returns one payment by its UUID.
@@ -69,21 +89,8 @@ Returns one payment by its UUID.
 - `400` – `id` is not a valid UUID
 - `404` – no payment with that id
 
-### `GET /payments`
-Lists payments, newest first, one page at a time.
-
-Query parameters (all optional):
-| Parameter | Default | Rules |
-|---|---|---|
-| `page` | `1` | whole number, at least 1 |
-| `limit` | `20` | whole number, 1–100 |
-| `status` | – | `pending`, `success` or `failed` |
-
-Example: `GET /payments?status=success&page=2&limit=10`
-
-Responses:
-- `200` – `{ "data": [...payments], "pagination": { "page", "limit", "total", "totalPages" } }`. A page past the end returns an empty `data` array.
-- `400` – invalid query parameter; `details` lists which one
+### Not yet ported from Express
+`GET /payments` (pagination and status filter) and `GET /payments/summary` exist in `express-v1` and are being rebuilt in NestJS.
 
 ### Payment object
 ```json

@@ -18,5 +18,17 @@ export class PaymentsService {
     );
     return toPayment(result.rows[0]);
     }
+
+    async findOne(id: string): Promise<Payment|undefined> {
+        const result = await this.pool.query<PaymentRow>(
+            'SELECT * FROM payments WHERE id = $1', [ id ]
+        );
+
+        const row = result.rows[0]
+        if (!row){
+            return undefined
+        }
+        return toPayment(row);
+    }
 }
 

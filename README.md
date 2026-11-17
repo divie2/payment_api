@@ -89,8 +89,33 @@ Returns one payment by its UUID.
 - `400` – `id` is not a valid UUID
 - `404` – no payment with that id
 
-### Not yet ported from Express
-`GET /payments` (pagination and status filter) and `GET /payments/summary` exist in `express-v1` and are being rebuilt in NestJS.
+### `GET /payments`
+Lists payments, newest first, one page at a time.
+
+Query parameters (all optional):
+| Parameter | Default | Rules |
+|---|---|---|
+| `page` | `1` | whole number, at least 1 |
+| `limit` | `20` | whole number, 1–100 |
+| `status` | – | `pending`, `success` or `failed` |
+
+Example: `GET /payments?status=success&page=2&limit=10`
+
+Responses:
+- `200` – `{ "data": [...payments], "pagination": { "page", "limit", "total", "totalPages" } }`. A page past the end returns an empty `data` array.
+- `400` – invalid query parameter; `message` lists each problem
+
+### `GET /payments/summary`
+Returns totals across all payments: the number of payments, the count per status, and the total and average amount of successful payments (in kobo, average rounded to a whole number).
+
+```json
+{
+  "totalCount": 62,
+  "byStatus": { "pending": 20, "success": 25, "failed": 17 },
+  "successAmountKobo": 13421744,
+  "averageAmountKobo": 536870
+}
+```
 
 ### Payment object
 ```json

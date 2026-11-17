@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { PG_POOL } from '../database/database.module.js';
 import { Pool } from 'pg'
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
-import { PaymentRow, toPayment, Payment, PaymentList } from './payment.types.js';
+import { PaymentRow, toPayment, Payment, PaymentList, PaymentSummaryRow, PaymentSummary } from './payment.types.js';
 import { ListPaymentsQueryDto } from './dto/list-payments-query.dto.js';
 
 @Injectable()
@@ -56,10 +56,34 @@ export class PaymentsService {
         const totalPages = Math.ceil(total / limit)
 
         return {
-            data: listResult.rows.map(toPayment),   
+            data: listResult.rows.map(toPayment),
             pagination: { page, limit, total, totalPages }
         }
 
     }
-}
 
+    async getSummary() : Promise<PaymentSummary> {
+        const result = await this.pool.query<PaymentSummaryRow>(
+            `
+    SELECT 
+      COUNT(*)::INT AS "totalCount",
+      JSON_BUILD_OBJECT(
+        'pending', COUNT(*) FILTER (WHERE status = 'pending') ::INT,
+        'success', COUNT(*) FILTER (WHERE status = 'success') ::INT,
+        'failed',  COUNT(*) FILTER (WHERE status = 'failed') ::INT
+      ) AS "byStatus",
+      COALESCE(SUM(amount_kobo) FILTER (WHERE status = 'success') , 0) AS "successAmountKobo",
+      COALESCE(ROUND(AVG(amount_kobo) FILTER (WHERE status = 'success'))::INT,0) AS "averageAmountKobo"
+    FROM payments;
+  `);
+        const summary = result.rows[0]
+
+        return {
+
+            totalCount: summary.totalCount, 
+            byStatus: summary.byStatus,
+            successAmountKobo: Number(summary.successAmountKobo), 
+            averageAmountKobo: summary.averageAmountKobo
+        }
+    }
+}

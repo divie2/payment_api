@@ -11,6 +11,29 @@ export interface PaymentRow {
     updated_at: Date;
 }
 
+export interface PaymentSummaryRow {
+    totalCount: number,
+    byStatus: {
+        pending: number, 
+        success: number,
+        failed: number
+    },
+    successAmountKobo: string,
+    averageAmountKobo: number
+}
+
+export interface PaymentSummary {
+    totalCount: number;
+    byStatus: {
+        pending: number;
+        success: number;
+        failed: number;
+    };
+    successAmountKobo: number;
+    averageAmountKobo: number;
+
+}
+
 // What the API sends back (camelCase)
 export interface Payment {
     id: string;
@@ -34,6 +57,8 @@ export interface PaymentList {
     };
 
 }
+
+
 
 export function toPayment(row: PaymentRow): Payment {
     return {

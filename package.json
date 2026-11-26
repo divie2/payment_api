@@ -7,7 +7,9 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
-    "migrate": "node --env-file=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js",    "build": "nest build",
+    "migrate": "node --env-file=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js",
+    "build": "nest build",
+    "migrate:test": "node --env-file=.env.test node_modules/node-pg-migrate/bin/node-pg-migrate.js",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
